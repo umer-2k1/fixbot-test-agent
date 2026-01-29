@@ -1,0 +1,36 @@
+# FixBot Configuration Example
+# Copy this to fixbot.config.json and customize as needed
+
+{
+  "test_command": "pytest",
+  "test_paths": [
+    "tests/",
+    "examples/"
+  ],
+  "max_attempts": 3,
+  "dry_run": true,
+  "backup_files": true,
+  "verbose": true,
+  "exclude_patterns": [
+    "**/test_integration.py",
+    "**/__pycache__/**"
+  ],
+  "failure_types": {
+    "assertion": {
+      "enabled": true,
+      "auto_fix": false
+    },
+    "import": {
+      "enabled": true,
+      "auto_fix": true
+    },
+    "attribute": {
+      "enabled": true,
+      "auto_fix": false
+    },
+    "type": {
+      "enabled": true,
+      "auto_fix": false
+    }
+  }
+}

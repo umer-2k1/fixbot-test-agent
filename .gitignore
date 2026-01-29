@@ -33,6 +33,9 @@ htmlcov/
 .tox/
 *.fixbot.bak
 
+# FixBot config
+fixbot.config.json
+
 # IDE
 .vscode/
 .idea/
