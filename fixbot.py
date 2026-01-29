@@ -9,7 +9,7 @@ import os
 import re
 import subprocess
 import sys
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 import json
 
@@ -103,7 +103,20 @@ class TestRunner:
         return failures
     
     def _extract_traceback(self, output: str, test_path: str) -> str:
-        """Extract traceback for a specific test from output."""
+        """
+        Extract traceback for a specific test from output.
+        
+        Parses test runner output to find and extract the traceback section
+        for a specific test failure. Captures lines between the test failure
+        marker and the next test result.
+        
+        Args:
+            output: Full test runner output string
+            test_path: Path identifier for the specific test (e.g., 'tests/test_foo.py::test_bar')
+            
+        Returns:
+            Extracted traceback as a string, or empty string if not found
+        """
         lines = output.split('\n')
         traceback_lines = []
         capturing = False
@@ -122,7 +135,7 @@ class TestRunner:
 class FailureAnalyzer:
     """Analyzes test failures to understand the root cause."""
     
-    def analyze_failure(self, failure: TestFailure) -> Dict[str, any]:
+    def analyze_failure(self, failure: TestFailure) -> Dict[str, Any]:
         """
         Analyze a test failure to determine the type and likely cause.
         
@@ -221,7 +234,17 @@ class FixGenerator:
         )
     
     def _apply_fix_strategy(self, code: str, failure: TestFailure, failure_type: str) -> str:
-        """Apply appropriate fix strategy based on failure type."""
+        """
+        Apply appropriate fix strategy based on failure type.
+        
+        Args:
+            code: Original test code
+            failure: TestFailure object with error details
+            failure_type: Type of failure (assertion, import, attribute, etc.)
+            
+        Returns:
+            Fixed code with suggested changes
+        """
         
         if failure_type == 'assertion':
             return self._fix_assertion(code, failure)
@@ -234,7 +257,18 @@ class FixGenerator:
             return self._add_review_comment(code, failure)
     
     def _fix_assertion(self, code: str, failure: TestFailure) -> str:
-        """Attempt to fix assertion errors."""
+        """
+        Attempt to fix assertion errors.
+        
+        Adds review comments to assertions that may need updating.
+        
+        Args:
+            code: Original test code
+            failure: TestFailure object
+            
+        Returns:
+            Code with review comments added
+        """
         # Example: If assertion compares expected vs actual, try to extract the actual value
         # This is a simplified example - real implementation would be more sophisticated
         
@@ -248,7 +282,16 @@ class FixGenerator:
         return '\n'.join(lines)
     
     def _fix_import(self, code: str, failure: TestFailure) -> str:
-        """Attempt to fix import errors."""
+        """
+        Attempt to fix import errors by adding missing imports.
+        
+        Args:
+            code: Original test code
+            failure: TestFailure object
+            
+        Returns:
+            Code with missing import added, or original code if no fix found
+        """
         # Check if import is missing
         missing_module = self._extract_missing_module(failure.error_message)
         if missing_module and not f"import {missing_module}" in code:
@@ -264,23 +307,59 @@ class FixGenerator:
         return code
     
     def _fix_attribute(self, code: str, failure: TestFailure) -> str:
-        """Attempt to fix attribute errors."""
+        """
+        Attempt to fix attribute errors by adding review comments.
+        
+        Args:
+            code: Original test code
+            failure: TestFailure object
+            
+        Returns:
+            Code with review comment
+        """
         return self._add_review_comment(code, failure)
     
     def _add_review_comment(self, code: str, failure: TestFailure) -> str:
-        """Add a review comment to the code."""
+        """
+        Add a review comment to the code for manual inspection.
+        
+        Args:
+            code: Original test code
+            failure: TestFailure object
+            
+        Returns:
+            Code with review comment prepended
+        """
         comment = f"\n# FixBot: Test '{failure.test_name}' failed - {failure.error_message}\n"
         return comment + code
     
     def _extract_missing_module(self, error_message: str) -> Optional[str]:
-        """Extract missing module name from error message."""
+        """
+        Extract missing module name from error message.
+        
+        Args:
+            error_message: Error message from test failure
+            
+        Returns:
+            Module name if found, None otherwise
+        """
         match = re.search(r"No module named '([^']+)'", error_message)
         if match:
             return match.group(1)
         return None
     
     def _generate_explanation(self, failure: TestFailure, analysis: Dict, failure_type: str) -> str:
-        """Generate human-readable explanation of the fix."""
+        """
+        Generate human-readable explanation of the fix.
+        
+        Args:
+            failure: TestFailure object
+            analysis: Analysis results from FailureAnalyzer
+            failure_type: Classified failure type
+            
+        Returns:
+            Human-readable explanation string
+        """
         explanation = f"Analysis of test failure '{failure.test_name}':\n"
         explanation += f"- Failure type: {failure_type}\n"
         explanation += f"- Error: {failure.error_message}\n"
@@ -291,6 +370,9 @@ class FixGenerator:
 
 class CodePatcher:
     """Applies fixes to code files."""
+    
+    # Maximum number of diff lines to display
+    MAX_DIFF_LINES = 10
     
     def apply_fix(self, suggestion: FixSuggestion, dry_run: bool = True) -> bool:
         """
@@ -334,14 +416,20 @@ class CodePatcher:
             return False
     
     def _show_diff(self, original: str, fixed: str):
-        """Show a simple diff between original and fixed code."""
+        """
+        Show a simple diff between original and fixed code.
+        
+        Args:
+            original: Original code content
+            fixed: Fixed code content
+        """
         orig_lines = original.split('\n')
         fixed_lines = fixed.split('\n')
         
         # Simple line-by-line comparison
         max_lines = max(len(orig_lines), len(fixed_lines))
         
-        for i in range(min(10, max_lines)):  # Show first 10 lines of diff
+        for i in range(min(self.MAX_DIFF_LINES, max_lines)):  # Show first N lines of diff
             if i < len(orig_lines):
                 print(f"  - {orig_lines[i]}")
             if i < len(fixed_lines) and (i >= len(orig_lines) or orig_lines[i] != fixed_lines[i]):

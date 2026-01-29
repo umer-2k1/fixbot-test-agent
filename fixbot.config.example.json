@@ -1,7 +1,5 @@
-# FixBot Configuration Example
-# Copy this to fixbot.config.json and customize as needed
-
 {
+  "_comment": "FixBot Configuration Example - Copy this to fixbot.config.json and customize as needed",
   "test_command": "pytest",
   "test_paths": [
     "tests/",
