@@ -1,0 +1,2 @@
+# FixBot - AI Test Auto-Fix Agent Dependencies
+pytest>=7.0.0
