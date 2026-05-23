@@ -1,0 +1,16 @@
+services:
+  browser-agent:
+    image: browseruse/browseruse
+    container_name: browser-agent 
+    build: .
+
+    volumes:
+      - ./app:/app
+      - ./screenshots:/screenshots
+
+    env_file:
+      - .env
+ 
+
+    stdin_open: true
+    tty: true
