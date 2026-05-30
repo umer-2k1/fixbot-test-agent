@@ -1,16 +1,41 @@
 services:
-  browser-agent:
-    image: browseruse/browseruse
-    container_name: browser-agent 
-    build: .
-
+  kasmvnc:
+    image: lscr.io/linuxserver/webtop:ubuntu-xfce
+    container_name: browser-kasmvnc
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: UTC
+      TITLE: Browser Use Preview
+    ports:
+      - "3000:3000"
+    shm_size: "2gb"
     volumes:
-      - ./app:/app
-      - ./screenshots:/screenshots
+      - kasm-config:/config
+      - x11-socket:/tmp/.X11-unix
 
+  browser-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: browser-agent
     env_file:
       - .env
- 
+    environment:
+      IN_DOCKER: "true"
+      BROWSER_USE_CHROME_NO_SANDBOX: "1"
+      BROWSER_USE_HEADLESS: "false"
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+      DISPLAY: ":1"
+    depends_on:
+      - kasmvnc
+    init: true
+    ipc: host
+    shm_size: "2gb"
+    volumes:
+      - ./screenshots:/app/screenshots
+      - x11-socket:/tmp/.X11-unix
 
-    stdin_open: true
-    tty: true
+volumes:
+  kasm-config:
+  x11-socket:
